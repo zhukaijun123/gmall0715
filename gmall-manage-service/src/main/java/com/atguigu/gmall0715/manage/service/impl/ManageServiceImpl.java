@@ -8,6 +8,8 @@ import com.atguigu.gmall0715.service.ManageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+
+import javax.annotation.Resource;
 import java.util.List;
 @Service
 public class ManageServiceImpl implements ManageService{
@@ -22,8 +24,22 @@ public class ManageServiceImpl implements ManageService{
     @Autowired
     private BaseAttrValueMapper baseAttrValueMapper;
 
-    @Autowired
+    @Autowired //默认type
     private SpuInfoMapper spuInfoMapper;
+
+    @Autowired
+    private SpuImageMapper spuImageMapper;
+
+    @Autowired
+    private SpuSaleAttrMapper spuSaleAttrMapper;
+
+    @Autowired
+    private SpuSaleAttrValueMapper spuSaleAttrValueMapper;
+
+    //@Autowired
+    @Resource//也是注入   默然是按照name注入  如果没有name 则去找type
+    private BaseSaleAttrMapper baseSaleAttrMapper;
+
 
     //select * from BaseCatalog1
     @Override
@@ -111,8 +127,61 @@ public class ManageServiceImpl implements ManageService{
     }
 
     @Override
-    public List<SpuInfo> getSpuInfoList(SpuInfo spuInfo) {
-        return null;
+    public List<SpuInfo> getSpuInfoList(String catalog3Id) {
+        //select * from sup_info where catalog3_id=62
+        SpuInfo spuInfo = new SpuInfo();
+        return spuInfoMapper.select(spuInfo);
     }
+
+    @Override
+    public List<BaseSaleAttr> getBaseSaleAttrList() {
+
+        return baseSaleAttrMapper.selectAll();
+    }
+
+    @Override
+    @Transactional
+    public void saveSpuInfo(SpuInfo spuInfo) {
+        /**
+         * 要用到4张表
+         * spuInfo
+         * spuImage
+         * spuSaleAttr
+         * spuSaleAttr
+         */
+        spuInfoMapper.insertSelective(spuInfo);
+        //spuImage
+        List<SpuImage> spuImageList = spuInfo.getSpuImageList();
+        if(spuImageList != null && spuImageList.size() >0){
+            for(SpuImage spuImage : spuImageList){
+                //因为在SpuImage 中有一个属性 ：商品id （spuId） 在没有保存之前我们没有  所以要获取
+                spuImage.setSpuId(spuInfo.getId());
+                spuImageMapper.insertSelective(spuImage);
+            }
+        }
+
+        //销售属性
+        List<SpuSaleAttr> spuSaleAttrList = spuInfo.getSpuSaleAttrList();
+        if(spuSaleAttrList != null && spuSaleAttrList.size() >0){
+            for(SpuSaleAttr spuSaleAttr : spuSaleAttrList){
+                //因为在SpuSaleAttr 中有一个属性 ：商品id （spuId） 在没有保存之前我们没有  所以要获取
+                spuSaleAttr.setSpuId(spuInfo.getId());
+                   spuSaleAttrMapper.insertSelective(spuSaleAttr);
+                //销售属性值
+                List<SpuSaleAttrValue> spuSaleAttrValueList = spuSaleAttr.getSpuSaleAttrValueList();
+                if(spuSaleAttrValueList != null && spuSaleAttrValueList.size() >0){
+                    for(SpuSaleAttrValue spuSaleAttrValue : spuSaleAttrValueList){
+                        spuSaleAttrValue.setSpuId(spuInfo.getId());
+                        spuSaleAttrValueMapper.insertSelective(spuSaleAttrValue);
+                    }
+                }
+            }
+        }
+
+
+
+
+    }
+
 
 }
