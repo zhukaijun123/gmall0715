@@ -5,10 +5,7 @@ import com.alibaba.dubbo.config.annotation.Reference;
 import com.atguigu.gmall0715.bean.*;
 import com.atguigu.gmall0715.service.ManageService;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -43,9 +40,11 @@ public class ManageController {
     }
 
     @RequestMapping("attrInfoList")
-    //http://localhost:8082/attrInfoList?catalog3Id=108
+    //http://localhost:8082/attrInfoList?catalog3Id=61
     public List<BaseAttrInfo> attrInfoList(String catalog3Id,BaseAttrInfo baseAttrInfo){
-        return manageService.getAttrInfoList(baseAttrInfo);
+       //return manageService.getAttrInfoList(baseAttrInfo);
+        //可以添加三级分类id catalog3Id
+        return manageService.getAttrInfoList(catalog3Id);
     }
 
     //页面传递数据是json 后台接收对象为java的Object 所以需要进行类型转换 由json -->Object

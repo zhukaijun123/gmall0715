@@ -2,16 +2,15 @@ package com.atguigu.gmall0715.manage.service.impl;
 
 import com.alibaba.dubbo.config.annotation.Service;
 import com.atguigu.gmall0715.bean.*;
-
 import com.atguigu.gmall0715.manage.mapper.*;
 import com.atguigu.gmall0715.service.ManageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import javax.annotation.Resource;
 import java.util.List;
 @Service
+
 public class ManageServiceImpl implements ManageService{
     @Autowired
     private BaseCatalog1Mapper baseCatalog1Mapper;
@@ -40,6 +39,18 @@ public class ManageServiceImpl implements ManageService{
     @Resource//也是注入   默然是按照name注入  如果没有name 则去找type
     private BaseSaleAttrMapper baseSaleAttrMapper;
 
+    @Autowired
+    private SkuAttrValueMapper skuAttrValueMapper;
+
+    @Autowired
+    private SkuInfoMapper skuInfoMapper;
+
+    @Autowired
+    private SkuImageMapper skuImageMapper;
+
+    @Autowired
+    private SkuSaleAttrValueMapper skuSaleAttrValueMapper;
+
 
     //select * from BaseCatalog1
     @Override
@@ -67,6 +78,8 @@ public class ManageServiceImpl implements ManageService{
 
     @Override
     public List<BaseAttrInfo> getAttrInfoList(BaseAttrInfo baseAttrInfo) {
+       //select * from baseAttrInfo where catalog3Id = ?   sql语句执行完成之后只显示运行内存 和机身内存
+      // baseAttrInfoMapper.xxx();
         return baseAttrInfoMapper.select(baseAttrInfo);
     }
 
@@ -135,7 +148,6 @@ public class ManageServiceImpl implements ManageService{
 
     @Override
     public List<BaseSaleAttr> getBaseSaleAttrList() {
-
         return baseSaleAttrMapper.selectAll();
     }
 
@@ -180,6 +192,62 @@ public class ManageServiceImpl implements ManageService{
 
 
 
+
+    }
+
+    @Override
+    public List<SpuImage> getSpuImageList(SpuImage spuImage) {
+        //select * from SpuImage where spuId = ? (spuImage.getSupId()) 通用mapper 对单张表进行CRUD
+
+        return spuImageMapper.select(spuImage);
+    }
+
+
+    @Override
+    public List<BaseAttrInfo> getAttrInfoList(String catalog3Id) {
+        //select * from base_attr_info bai inner join base_attr_value bav ON bai.id = bav.id where bai.catalog3 = 61;
+        return baseAttrInfoMapper.selectBaseAttrInfoListByCatalog3Id (catalog3Id);
+
+    }
+
+    @Override
+    public List<SpuSaleAttr> getSpuSaleAttrList(String spuId) {
+    //SELECT * from spu_sale_attr ssa INNER JOIN spu_sale_attr_value ssav ON ssa.spu_id = ssav.spu_id AND ssa.sale_attr_id = ssav.sale_attr_id
+    //    WHERE ssa.spu_id=61;
+
+        return spuSaleAttrMapper.selectSpuSaleAttrList(spuId);
+    }
+
+    @Override
+    @Transactional //4张表关联 需要添加事务
+    public void saveSkuInfo(SkuInfo skuInfo) {
+        //skuInfo
+        skuInfoMapper.insertSelective(skuInfo);
+
+        //SkuAttrValue 平台属性
+        List<SkuAttrValue> skuAttrValueList = skuInfo.getSkuAttrValueList();
+        if(skuAttrValueList != null && skuAttrValueList.size() >0){
+            for(SkuAttrValue skuAttrValue : skuAttrValueList){
+                skuAttrValue.setSkuId(skuInfo.getId());
+                skuAttrValueMapper.insertSelective(skuAttrValue);
+            }
+        }
+        //skuSaleAttrValue 销售属性
+        List<SkuSaleAttrValue> skuSaleAttrValueList = skuInfo.getSkuSaleAttrValueList();
+        if(skuSaleAttrValueList!= null && skuSaleAttrValueList.size() >0){
+            for(SkuSaleAttrValue skuSaleAttrValue : skuSaleAttrValueList){
+                skuSaleAttrValue.setSkuId(skuInfo.getId());
+                skuSaleAttrValueMapper.insertSelective(skuSaleAttrValue);
+            }
+        }
+        //skuimage 图片表
+        List<SkuImage> skuImageList = skuInfo.getSkuImageList();
+        if(skuImageList!= null && skuImageList.size()>0){
+            for(SkuImage skuImage : skuImageList){
+                skuImage.setSkuId(skuInfo.getId());
+                skuImageMapper.insertSelective(skuImage);
+            }
+        }
 
     }
 
